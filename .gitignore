@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Models and experiment artifacts (keep current model metadata only)
+mlops/models/**/*.joblib
+mlops/mlruns/
+mlruns/
+logs/
+*.db
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env and OS
+.env
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

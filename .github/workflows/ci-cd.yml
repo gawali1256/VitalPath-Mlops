@@ -1,0 +1,47 @@
+name: VitalPath CI/CD
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  quality-and-model-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend and training dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Unit and API tests
+        run: pytest -q
+
+      - name: Train model and publish to local registry
+        run: python mlops/train.py --registry mlops/models/current
+
+      - name: Evaluate holdout quality gate
+        run: python mlops/evaluate.py
+
+      - name: Upload model metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-metadata
+          path: mlops/models/current/metadata.json
+
+  build-images:
+    needs: quality-and-model-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build local Docker images
+        run: docker compose build api frontend
+
+      - name: Compose config sanity check
+        run: docker compose config --quiet

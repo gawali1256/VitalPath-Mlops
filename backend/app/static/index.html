@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VitalPath — Health Assessment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,640&family=Source+Sans+3:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #f3ead8;
+        --ink: #1d2a24;
+        --sage: #2f5d4a;
+        --clay: #b85c38;
+        --line: #d8cbb3;
+        --card: #fffaf0;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: "Source Sans 3", sans-serif;
+      }
+      h1, h2, h3 { font-family: "Fraunces", serif; margin: 0 0 0.4rem; }
+      .page { max-width: 1120px; margin: 0 auto; padding: 48px 20px 80px; }
+      .hero { max-width: 720px; margin-bottom: 36px; }
+      .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.76rem; color: var(--sage); margin: 0 0 8px; }
+      h1 { font-size: 4rem; line-height: 0.95; }
+      .lede { font-size: 1.15rem; line-height: 1.5; max-width: 640px; }
+      .chip { display: inline-block; margin-top: 8px; padding: 6px 10px; border: 1px solid var(--line); background: var(--card); }
+      .layout { display: grid; grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr); gap: 20px; }
+      .panel { background: var(--card); border: 1px solid var(--line); padding: 24px; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0 20px; }
+      label { display: flex; flex-direction: column; gap: 6px; font-size: 0.88rem; }
+      label.wide { grid-column: 1 / -1; }
+      input, select, button { font: inherit; color: var(--ink); }
+      input, select { border: 1px solid var(--line); background: #fff; padding: 10px 12px; }
+      button { width: 100%; border: 0; background: var(--sage); color: #f7f1e6; padding: 12px 16px; cursor: pointer; }
+      .error { color: var(--clay); }
+      .result-top { display: flex; justify-content: space-between; gap: 16px; }
+      .risk { border: 1px solid var(--line); padding: 8px 10px; text-transform: capitalize; }
+      .risk-low { background: #dce8df; }
+      .risk-moderate { background: #f3e1c8; }
+      .risk-high { background: #f3d4c8; }
+      .meter { margin: 22px 0; }
+      .track { position: relative; display: grid; grid-template-columns: 23% 23% 18% 36%; height: 14px; }
+      .under { background: #c9d6cf; } .healthy { background: #2f5d4a; } .over { background: #d9a15a; } .obese { background: #b85c38; }
+      .needle { position: absolute; top: -5px; width: 2px; height: 24px; background: var(--ink); }
+      .labels { display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 8px; color: #5b675f; }
+      .exercises { list-style: none; padding: 0; margin: 18px 0 0; }
+      .exercises li { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+      .fine { font-size: 0.82rem; color: #667068; }
+      @media (max-width: 860px) {
+        h1 { font-size: 3rem; }
+        .layout, .grid { grid-template-columns: 1fr; }
+        .result-top, .exercises li { flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <p class="eyebrow">Local MLOps health lab</p>
+        <h1>VitalPath</h1>
+        <p class="lede">
+          Enter the basics. The API calculates BMI, a trained model estimates lifestyle risk,
+          and a rule engine turns that into a weekly exercise plan.
+        </p>
+        <p id="model" class="chip">Loading model info…</p>
+      </header>
+      <main class="layout">
+        <form class="panel" id="form">
+          <h2>Your measurements</h2>
+          <div class="grid">
+            <label>Age <input name="age" type="number" min="14" max="90" value="32" required /></label>
+            <label>Gender
+              <select name="gender">
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label>Height (cm) <input name="height_cm" type="number" min="120" max="230" step="0.1" value="168" required /></label>
+            <label>Weight (kg) <input name="weight_kg" type="number" min="30" max="250" step="0.1" value="64" required /></label>
+            <label>Activity
+              <select name="activity_level">
+                <option value="sedentary">Sedentary</option>
+                <option value="light" selected>Light</option>
+                <option value="moderate">Moderate</option>
+                <option value="active">Active</option>
+              </select>
+            </label>
+            <label>Sleep (hours) <input name="sleep_hours" type="number" min="3" max="14" step="0.5" value="7" required /></label>
+            <label class="wide">Goal
+              <select name="goal">
+                <option value="lose">Lose body mass</option>
+                <option value="maintain" selected>Maintain</option>
+                <option value="gain">Gain strength / mass</option>
+              </select>
+            </label>
+          </div>
+          <button type="submit">Assess my health</button>
+          <p id="error" class="error"></p>
+        </form>
+        <section class="panel" id="result">
+          <h2>Results appear here</h2>
+          <p>The score uses BMI math plus the Random Forest models published by the training job.</p>
+        </section>
+      </main>
+    </div>
+    <script>
+      const result = document.getElementById("result");
+      fetch("/api/model")
+        .then((r) => r.ok ? r.json() : null)
+        .then((model) => {
+          const el = document.getElementById("model");
+          if (!model) { el.textContent = "Model not loaded yet"; return; }
+          el.textContent = `Serving model ${model.version} · risk accuracy ${model.metrics?.risk_accuracy ?? "—"}`;
+        });
+
+      document.getElementById("form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        document.getElementById("error").textContent = "";
+        const data = Object.fromEntries(new FormData(event.target).entries());
+        data.age = Number(data.age);
+        data.height_cm = Number(data.height_cm);
+        data.weight_kg = Number(data.weight_kg);
+        data.sleep_hours = Number(data.sleep_hours);
+        try {
+          const response = await fetch("/api/assess", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const body = await response.json();
+          if (!response.ok) throw new Error(body.detail || "Assessment failed");
+          const left = ((Math.min(40, Math.max(12, body.bmi)) - 12) / 28) * 100;
+          result.innerHTML = `
+            <div class="result-top">
+              <div>
+                <p class="eyebrow">Current health</p>
+                <h2>${body.health_status}</h2>
+              </div>
+              <span class="risk risk-${body.risk_level}">${body.risk_level} risk · ${Math.round(body.risk_confidence * 100)}%</span>
+            </div>
+            <div class="meter">
+              <div class="track">
+                <span class="under"></span><span class="healthy"></span><span class="over"></span><span class="obese"></span>
+                <span class="needle" style="left:${left}%"></span>
+              </div>
+              <div class="labels"><span>12</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div>
+              <p>BMI ${body.bmi} · ${body.bmi_category}</p>
+            </div>
+            <p>${body.summary}</p>
+            <p><strong>Weekly focus:</strong> ${body.weekly_focus} Intensity: ${body.recommended_intensity}.</p>
+            <ul class="exercises">${body.exercises.map((item) => `
+              <li>
+                <div><h3>${item.name}</h3><p>${item.why}</p></div>
+                <span>${item.minutes} min · ${item.frequency_per_week}x / week</span>
+              </li>`).join("")}</ul>
+            <p class="fine">Model version ${body.model_version}. This is a teaching demo, not medical advice.</p>
+          `;
+        } catch (err) {
+          document.getElementById("error").textContent = err.message;
+        }
+      });
+    </script>
+  </body>
+</html>

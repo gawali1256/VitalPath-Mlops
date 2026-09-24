@@ -1,0 +1,68 @@
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.18.0
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-data:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL_PATH: /models/current/model.joblib
+      LOG_PATH: /logs/predictions.jsonl
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      ALLOW_ORIGINS: "*"
+    volumes:
+      - ./mlops/models:/models
+      - ./logs:/logs
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  trainer:
+    profiles: ["train"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - ./mlops/models:/models
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    command: ["python", "mlops/train.py", "--registry", "/models/current"]
+
+volumes:
+  mlflow-data:
